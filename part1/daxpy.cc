@@ -1,5 +1,7 @@
 #include <random>
 #include <iostream>
+#include "m5ops.h"
+
 
 int main()
 {
@@ -15,12 +17,14 @@ int main()
         Y[i] = dis(gen);
     }
 
+    m5_dump_reset_stats(0,0);
     // Start of daxpy loop
     for (int i = 0; i < N; ++i)
     {
         Y[i] = alpha * X[i] + Y[i];
     }
     // End of daxpy loop
+    m5_dump_reset_stats(0,0);
     
     double sum = 0;
     for (int i = 0; i < N; ++i)
