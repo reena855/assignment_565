@@ -240,46 +240,13 @@
         }, 
         "cpu": [
             {
+                "max_insts_any_thread": 0, 
                 "do_statistics_insts": true, 
                 "numThreads": 1, 
-                "itb": {
-                    "name": "itb", 
-                    "system": "system", 
-                    "eventq_index": 0, 
-                    "cxx_class": "X86ISA::TLB", 
-                    "walker": {
-                        "name": "walker", 
-                        "clk_domain": "system.cpu_clk_domain", 
-                        "power_model": [], 
-                        "system": "system", 
-                        "eventq_index": 0, 
-                        "power_state": {
-                            "default_state": "UNDEFINED", 
-                            "name": "power_state", 
-                            "possible_states": [], 
-                            "clk_gate_min": 1000, 
-                            "clk_gate_bins": 20, 
-                            "eventq_index": 0, 
-                            "clk_gate_max": 1000000000000, 
-                            "cxx_class": "PowerState", 
-                            "path": "system.cpu.itb.walker.power_state", 
-                            "type": "PowerState", 
-                            "leaders": []
-                        }, 
-                        "cxx_class": "X86ISA::Walker", 
-                        "path": "system.cpu.itb.walker", 
-                        "type": "X86PagetableWalker", 
-                        "port": {
-                            "peer": "system.cpu.itb_walker_cache.cpu_side", 
-                            "is_source": "True", 
-                            "role": "GEM5 REQUESTER"
-                        }, 
-                        "num_squash_per_cycle": 4
-                    }, 
-                    "path": "system.cpu.itb", 
-                    "type": "X86TLB", 
-                    "size": 64
-                }, 
+                "fetch1LineSnapWidth": 0, 
+                "fetch1ToFetch2BackwardDelay": 1, 
+                "fetch1FetchLimit": 1, 
+                "executeIssueLimit": 2, 
                 "power_gating_on_idle": false, 
                 "dtb_walker_cache": {
                     "replacement_policy": {
@@ -384,10 +351,16 @@
                     "sequential_access": false, 
                     "assoc": 2
                 }, 
+                "executeLSQMaxStoreBufferStoresPerCycle": 2, 
                 "function_trace": false, 
                 "do_checkpoint_insts": true, 
-                "cxx_class": "TimingSimpleCPU", 
+                "decodeInputWidth": 2, 
+                "cxx_class": "MinorCPU", 
+                "executeMemoryIssueLimit": 1, 
+                "decodeCycleInput": true, 
+                "syscallRetryLatency": 10000, 
                 "system": "system", 
+                "executeLSQTransfersQueueSize": 2, 
                 "itb_walker_cache": {
                     "replacement_policy": {
                         "eventq_index": 0, 
@@ -496,6 +469,7 @@
                 "cpu_id": 0, 
                 "checker": null, 
                 "eventq_index": 0, 
+                "executeMemoryWidth": 0, 
                 "power_state": {
                     "default_state": "UNDEFINED", 
                     "name": "power_state", 
@@ -513,9 +487,13 @@
                     "type": "PowerState", 
                     "leaders": []
                 }, 
+                "executeBranchDelay": 1, 
+                "executeMemoryCommitLimit": 1, 
                 "do_quiesce": true, 
-                "type": "TimingSimpleCPU", 
-                "profile": 0, 
+                "type": "MinorCPU", 
+                "executeCycleInput": true, 
+                "executeAllowEarlyMemoryIssue": true, 
+                "executeInputBufferSize": 7, 
                 "icache_port": {
                     "peer": "system.cpu.icache.cpu_side", 
                     "is_source": "True", 
@@ -624,7 +602,55 @@
                     "sequential_access": false, 
                     "assoc": 2
                 }, 
-                "syscallRetryLatency": 10000, 
+                "socket_id": 0, 
+                "progress_interval": 0, 
+                "isa": [
+                    {
+                        "eventq_index": 0, 
+                        "path": "system.cpu.isa", 
+                        "type": "X86ISA", 
+                        "name": "isa", 
+                        "cxx_class": "X86ISA::ISA"
+                    }
+                ], 
+                "itb": {
+                    "name": "itb", 
+                    "system": "system", 
+                    "eventq_index": 0, 
+                    "cxx_class": "X86ISA::TLB", 
+                    "walker": {
+                        "name": "walker", 
+                        "clk_domain": "system.cpu_clk_domain", 
+                        "power_model": [], 
+                        "system": "system", 
+                        "eventq_index": 0, 
+                        "power_state": {
+                            "default_state": "UNDEFINED", 
+                            "name": "power_state", 
+                            "possible_states": [], 
+                            "clk_gate_min": 1000, 
+                            "clk_gate_bins": 20, 
+                            "eventq_index": 0, 
+                            "clk_gate_max": 1000000000000, 
+                            "cxx_class": "PowerState", 
+                            "path": "system.cpu.itb.walker.power_state", 
+                            "type": "PowerState", 
+                            "leaders": []
+                        }, 
+                        "cxx_class": "X86ISA::Walker", 
+                        "path": "system.cpu.itb.walker", 
+                        "type": "X86PagetableWalker", 
+                        "port": {
+                            "peer": "system.cpu.itb_walker_cache.cpu_side", 
+                            "is_source": "True", 
+                            "role": "GEM5 REQUESTER"
+                        }, 
+                        "num_squash_per_cycle": 4
+                    }, 
+                    "path": "system.cpu.itb", 
+                    "type": "X86TLB", 
+                    "size": 64
+                }, 
                 "interrupts": [
                     {
                         "int_master": {
@@ -666,19 +692,777 @@
                     "is_source": "True", 
                     "role": "GEM5 REQUESTER"
                 }, 
-                "socket_id": 0, 
+                "executeFuncUnits": {
+                    "name": "executeFuncUnits", 
+                    "eventq_index": 0, 
+                    "cxx_class": "MinorFUPool", 
+                    "path": "system.cpu.executeFuncUnits", 
+                    "funcUnits": [
+                        {
+                            "issueLat": 1, 
+                            "opLat": 3, 
+                            "name": "funcUnits0", 
+                            "cantForwardFromFUIndices": [], 
+                            "opClasses": {
+                                "name": "opClasses", 
+                                "opClasses": [
+                                    {
+                                        "opClass": "IntAlu", 
+                                        "name": "opClasses", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits0.opClasses.opClasses", 
+                                        "type": "MinorOpClass"
+                                    }
+                                ], 
+                                "eventq_index": 0, 
+                                "cxx_class": "MinorOpClassSet", 
+                                "path": "system.cpu.executeFuncUnits.funcUnits0.opClasses", 
+                                "type": "MinorOpClassSet"
+                            }, 
+                            "eventq_index": 0, 
+                            "timings": [
+                                {
+                                    "extraAssumedLat": 0, 
+                                    "description": "Int", 
+                                    "srcRegsRelativeLats": [
+                                        2
+                                    ], 
+                                    "suppress": false, 
+                                    "mask": 0, 
+                                    "extraCommitLat": 0, 
+                                    "eventq_index": 0, 
+                                    "opClasses": {
+                                        "name": "opClasses", 
+                                        "opClasses": [], 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClassSet", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits0.timings.opClasses", 
+                                        "type": "MinorOpClassSet"
+                                    }, 
+                                    "cxx_class": "MinorFUTiming", 
+                                    "path": "system.cpu.executeFuncUnits.funcUnits0.timings", 
+                                    "extraCommitLatExpr": null, 
+                                    "type": "MinorFUTiming", 
+                                    "match": 0, 
+                                    "name": "timings"
+                                }
+                            ], 
+                            "cxx_class": "MinorFU", 
+                            "path": "system.cpu.executeFuncUnits.funcUnits0", 
+                            "type": "MinorFU"
+                        }, 
+                        {
+                            "issueLat": 1, 
+                            "opLat": 3, 
+                            "name": "funcUnits1", 
+                            "cantForwardFromFUIndices": [], 
+                            "opClasses": {
+                                "name": "opClasses", 
+                                "opClasses": [
+                                    {
+                                        "opClass": "IntAlu", 
+                                        "name": "opClasses", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits1.opClasses.opClasses", 
+                                        "type": "MinorOpClass"
+                                    }
+                                ], 
+                                "eventq_index": 0, 
+                                "cxx_class": "MinorOpClassSet", 
+                                "path": "system.cpu.executeFuncUnits.funcUnits1.opClasses", 
+                                "type": "MinorOpClassSet"
+                            }, 
+                            "eventq_index": 0, 
+                            "timings": [
+                                {
+                                    "extraAssumedLat": 0, 
+                                    "description": "Int", 
+                                    "srcRegsRelativeLats": [
+                                        2
+                                    ], 
+                                    "suppress": false, 
+                                    "mask": 0, 
+                                    "extraCommitLat": 0, 
+                                    "eventq_index": 0, 
+                                    "opClasses": {
+                                        "name": "opClasses", 
+                                        "opClasses": [], 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClassSet", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits1.timings.opClasses", 
+                                        "type": "MinorOpClassSet"
+                                    }, 
+                                    "cxx_class": "MinorFUTiming", 
+                                    "path": "system.cpu.executeFuncUnits.funcUnits1.timings", 
+                                    "extraCommitLatExpr": null, 
+                                    "type": "MinorFUTiming", 
+                                    "match": 0, 
+                                    "name": "timings"
+                                }
+                            ], 
+                            "cxx_class": "MinorFU", 
+                            "path": "system.cpu.executeFuncUnits.funcUnits1", 
+                            "type": "MinorFU"
+                        }, 
+                        {
+                            "issueLat": 1, 
+                            "opLat": 3, 
+                            "name": "funcUnits2", 
+                            "cantForwardFromFUIndices": [], 
+                            "opClasses": {
+                                "name": "opClasses", 
+                                "opClasses": [
+                                    {
+                                        "opClass": "IntMult", 
+                                        "name": "opClasses", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits2.opClasses.opClasses", 
+                                        "type": "MinorOpClass"
+                                    }
+                                ], 
+                                "eventq_index": 0, 
+                                "cxx_class": "MinorOpClassSet", 
+                                "path": "system.cpu.executeFuncUnits.funcUnits2.opClasses", 
+                                "type": "MinorOpClassSet"
+                            }, 
+                            "eventq_index": 0, 
+                            "timings": [
+                                {
+                                    "extraAssumedLat": 0, 
+                                    "description": "Mul", 
+                                    "srcRegsRelativeLats": [
+                                        0
+                                    ], 
+                                    "suppress": false, 
+                                    "mask": 0, 
+                                    "extraCommitLat": 0, 
+                                    "eventq_index": 0, 
+                                    "opClasses": {
+                                        "name": "opClasses", 
+                                        "opClasses": [], 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClassSet", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits2.timings.opClasses", 
+                                        "type": "MinorOpClassSet"
+                                    }, 
+                                    "cxx_class": "MinorFUTiming", 
+                                    "path": "system.cpu.executeFuncUnits.funcUnits2.timings", 
+                                    "extraCommitLatExpr": null, 
+                                    "type": "MinorFUTiming", 
+                                    "match": 0, 
+                                    "name": "timings"
+                                }
+                            ], 
+                            "cxx_class": "MinorFU", 
+                            "path": "system.cpu.executeFuncUnits.funcUnits2", 
+                            "type": "MinorFU"
+                        }, 
+                        {
+                            "issueLat": 9, 
+                            "opLat": 9, 
+                            "name": "funcUnits3", 
+                            "cantForwardFromFUIndices": [], 
+                            "opClasses": {
+                                "name": "opClasses", 
+                                "opClasses": [
+                                    {
+                                        "opClass": "IntDiv", 
+                                        "name": "opClasses", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits3.opClasses.opClasses", 
+                                        "type": "MinorOpClass"
+                                    }
+                                ], 
+                                "eventq_index": 0, 
+                                "cxx_class": "MinorOpClassSet", 
+                                "path": "system.cpu.executeFuncUnits.funcUnits3.opClasses", 
+                                "type": "MinorOpClassSet"
+                            }, 
+                            "eventq_index": 0, 
+                            "timings": [], 
+                            "cxx_class": "MinorFU", 
+                            "path": "system.cpu.executeFuncUnits.funcUnits3", 
+                            "type": "MinorFU"
+                        }, 
+                        {
+                            "issueLat": 1, 
+                            "opLat": 6, 
+                            "name": "funcUnits4", 
+                            "cantForwardFromFUIndices": [], 
+                            "opClasses": {
+                                "name": "opClasses", 
+                                "opClasses": [
+                                    {
+                                        "opClass": "FloatAdd", 
+                                        "name": "opClasses00", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses00", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "FloatCmp", 
+                                        "name": "opClasses01", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses01", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "FloatCvt", 
+                                        "name": "opClasses02", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses02", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "FloatMisc", 
+                                        "name": "opClasses03", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses03", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "FloatMult", 
+                                        "name": "opClasses04", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses04", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "FloatMultAcc", 
+                                        "name": "opClasses05", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses05", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "FloatDiv", 
+                                        "name": "opClasses06", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses06", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "FloatSqrt", 
+                                        "name": "opClasses07", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses07", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdAdd", 
+                                        "name": "opClasses08", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses08", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdAddAcc", 
+                                        "name": "opClasses09", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses09", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdAlu", 
+                                        "name": "opClasses10", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses10", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdCmp", 
+                                        "name": "opClasses11", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses11", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdCvt", 
+                                        "name": "opClasses12", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses12", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdMisc", 
+                                        "name": "opClasses13", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses13", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdMult", 
+                                        "name": "opClasses14", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses14", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdMultAcc", 
+                                        "name": "opClasses15", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses15", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdShift", 
+                                        "name": "opClasses16", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses16", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdShiftAcc", 
+                                        "name": "opClasses17", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses17", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdDiv", 
+                                        "name": "opClasses18", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses18", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdSqrt", 
+                                        "name": "opClasses19", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses19", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdFloatAdd", 
+                                        "name": "opClasses20", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses20", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdFloatAlu", 
+                                        "name": "opClasses21", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses21", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdFloatCmp", 
+                                        "name": "opClasses22", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses22", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdFloatCvt", 
+                                        "name": "opClasses23", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses23", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdFloatDiv", 
+                                        "name": "opClasses24", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses24", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdFloatMisc", 
+                                        "name": "opClasses25", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses25", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdFloatMult", 
+                                        "name": "opClasses26", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses26", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdFloatMultAcc", 
+                                        "name": "opClasses27", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses27", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdFloatSqrt", 
+                                        "name": "opClasses28", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses28", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdReduceAdd", 
+                                        "name": "opClasses29", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses29", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdReduceAlu", 
+                                        "name": "opClasses30", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses30", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdReduceCmp", 
+                                        "name": "opClasses31", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses31", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdFloatReduceAdd", 
+                                        "name": "opClasses32", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses32", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdFloatReduceCmp", 
+                                        "name": "opClasses33", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses33", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdAes", 
+                                        "name": "opClasses34", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses34", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdAesMix", 
+                                        "name": "opClasses35", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses35", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdSha1Hash", 
+                                        "name": "opClasses36", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses36", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdSha1Hash2", 
+                                        "name": "opClasses37", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses37", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdSha256Hash", 
+                                        "name": "opClasses38", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses38", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdSha256Hash2", 
+                                        "name": "opClasses39", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses39", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdShaSigma2", 
+                                        "name": "opClasses40", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses40", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "SimdShaSigma3", 
+                                        "name": "opClasses41", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses.opClasses41", 
+                                        "type": "MinorOpClass"
+                                    }
+                                ], 
+                                "eventq_index": 0, 
+                                "cxx_class": "MinorOpClassSet", 
+                                "path": "system.cpu.executeFuncUnits.funcUnits4.opClasses", 
+                                "type": "MinorOpClassSet"
+                            }, 
+                            "eventq_index": 0, 
+                            "timings": [
+                                {
+                                    "extraAssumedLat": 0, 
+                                    "description": "FloatSimd", 
+                                    "srcRegsRelativeLats": [
+                                        2
+                                    ], 
+                                    "suppress": false, 
+                                    "mask": 0, 
+                                    "extraCommitLat": 0, 
+                                    "eventq_index": 0, 
+                                    "opClasses": {
+                                        "name": "opClasses", 
+                                        "opClasses": [], 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClassSet", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits4.timings.opClasses", 
+                                        "type": "MinorOpClassSet"
+                                    }, 
+                                    "cxx_class": "MinorFUTiming", 
+                                    "path": "system.cpu.executeFuncUnits.funcUnits4.timings", 
+                                    "extraCommitLatExpr": null, 
+                                    "type": "MinorFUTiming", 
+                                    "match": 0, 
+                                    "name": "timings"
+                                }
+                            ], 
+                            "cxx_class": "MinorFU", 
+                            "path": "system.cpu.executeFuncUnits.funcUnits4", 
+                            "type": "MinorFU"
+                        }, 
+                        {
+                            "issueLat": 1, 
+                            "opLat": 3, 
+                            "name": "funcUnits5", 
+                            "cantForwardFromFUIndices": [], 
+                            "opClasses": {
+                                "name": "opClasses", 
+                                "opClasses": [
+                                    {
+                                        "opClass": "SimdPredAlu", 
+                                        "name": "opClasses", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits5.opClasses.opClasses", 
+                                        "type": "MinorOpClass"
+                                    }
+                                ], 
+                                "eventq_index": 0, 
+                                "cxx_class": "MinorOpClassSet", 
+                                "path": "system.cpu.executeFuncUnits.funcUnits5.opClasses", 
+                                "type": "MinorOpClassSet"
+                            }, 
+                            "eventq_index": 0, 
+                            "timings": [
+                                {
+                                    "extraAssumedLat": 0, 
+                                    "description": "Pred", 
+                                    "srcRegsRelativeLats": [
+                                        2
+                                    ], 
+                                    "suppress": false, 
+                                    "mask": 0, 
+                                    "extraCommitLat": 0, 
+                                    "eventq_index": 0, 
+                                    "opClasses": {
+                                        "name": "opClasses", 
+                                        "opClasses": [], 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClassSet", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits5.timings.opClasses", 
+                                        "type": "MinorOpClassSet"
+                                    }, 
+                                    "cxx_class": "MinorFUTiming", 
+                                    "path": "system.cpu.executeFuncUnits.funcUnits5.timings", 
+                                    "extraCommitLatExpr": null, 
+                                    "type": "MinorFUTiming", 
+                                    "match": 0, 
+                                    "name": "timings"
+                                }
+                            ], 
+                            "cxx_class": "MinorFU", 
+                            "path": "system.cpu.executeFuncUnits.funcUnits5", 
+                            "type": "MinorFU"
+                        }, 
+                        {
+                            "issueLat": 1, 
+                            "opLat": 1, 
+                            "name": "funcUnits6", 
+                            "cantForwardFromFUIndices": [], 
+                            "opClasses": {
+                                "name": "opClasses", 
+                                "opClasses": [
+                                    {
+                                        "opClass": "MemRead", 
+                                        "name": "opClasses0", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits6.opClasses.opClasses0", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "MemWrite", 
+                                        "name": "opClasses1", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits6.opClasses.opClasses1", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "FloatMemRead", 
+                                        "name": "opClasses2", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits6.opClasses.opClasses2", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "FloatMemWrite", 
+                                        "name": "opClasses3", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits6.opClasses.opClasses3", 
+                                        "type": "MinorOpClass"
+                                    }
+                                ], 
+                                "eventq_index": 0, 
+                                "cxx_class": "MinorOpClassSet", 
+                                "path": "system.cpu.executeFuncUnits.funcUnits6.opClasses", 
+                                "type": "MinorOpClassSet"
+                            }, 
+                            "eventq_index": 0, 
+                            "timings": [
+                                {
+                                    "extraAssumedLat": 2, 
+                                    "description": "Mem", 
+                                    "srcRegsRelativeLats": [
+                                        1
+                                    ], 
+                                    "suppress": false, 
+                                    "mask": 0, 
+                                    "extraCommitLat": 0, 
+                                    "eventq_index": 0, 
+                                    "opClasses": {
+                                        "name": "opClasses", 
+                                        "opClasses": [], 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClassSet", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits6.timings.opClasses", 
+                                        "type": "MinorOpClassSet"
+                                    }, 
+                                    "cxx_class": "MinorFUTiming", 
+                                    "path": "system.cpu.executeFuncUnits.funcUnits6.timings", 
+                                    "extraCommitLatExpr": null, 
+                                    "type": "MinorFUTiming", 
+                                    "match": 0, 
+                                    "name": "timings"
+                                }
+                            ], 
+                            "cxx_class": "MinorFU", 
+                            "path": "system.cpu.executeFuncUnits.funcUnits6", 
+                            "type": "MinorFU"
+                        }, 
+                        {
+                            "issueLat": 1, 
+                            "opLat": 1, 
+                            "name": "funcUnits7", 
+                            "cantForwardFromFUIndices": [], 
+                            "opClasses": {
+                                "name": "opClasses", 
+                                "opClasses": [
+                                    {
+                                        "opClass": "IprAccess", 
+                                        "name": "opClasses0", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits7.opClasses.opClasses0", 
+                                        "type": "MinorOpClass"
+                                    }, 
+                                    {
+                                        "opClass": "InstPrefetch", 
+                                        "name": "opClasses1", 
+                                        "eventq_index": 0, 
+                                        "cxx_class": "MinorOpClass", 
+                                        "path": "system.cpu.executeFuncUnits.funcUnits7.opClasses.opClasses1", 
+                                        "type": "MinorOpClass"
+                                    }
+                                ], 
+                                "eventq_index": 0, 
+                                "cxx_class": "MinorOpClassSet", 
+                                "path": "system.cpu.executeFuncUnits.funcUnits7.opClasses", 
+                                "type": "MinorOpClassSet"
+                            }, 
+                            "eventq_index": 0, 
+                            "timings": [], 
+                            "cxx_class": "MinorFU", 
+                            "path": "system.cpu.executeFuncUnits.funcUnits7", 
+                            "type": "MinorFU"
+                        }
+                    ], 
+                    "type": "MinorFUPool"
+                }, 
+                "switched_out": false, 
                 "power_model": [], 
                 "max_insts_all_threads": 0, 
-                "path": "system.cpu", 
+                "executeSetTraceTimeOnIssue": false, 
+                "fetch2InputBufferSize": 2, 
+                "profile": 0, 
+                "fetch2ToDecodeForwardDelay": 1, 
+                "executeInputWidth": 2, 
+                "decodeToExecuteForwardDelay": 1, 
+                "executeLSQRequestsQueueSize": 1, 
                 "pwr_gating_latency": 300, 
-                "switched_out": false, 
+                "fetch2CycleInput": true, 
+                "executeMaxAccessesInMemory": 2, 
+                "enableIdling": true, 
+                "executeLSQStoreBufferSize": 5, 
                 "workload": [
                     {
                         "uid": 100, 
                         "pid": 100, 
                         "kvmInSE": false, 
                         "cxx_class": "Process", 
-                        "executable": "./part1/daxpy_hooks", 
+                        "executable": "./part1/daxpy_part1b", 
                         "drivers": [], 
                         "system": "system", 
                         "gid": 100, 
@@ -695,7 +1479,7 @@
                         "path": "system.cpu.workload", 
                         "name": "workload", 
                         "cmd": [
-                            "./part1/daxpy_hooks"
+                            "./part1/daxpy_part1b"
                         ], 
                         "errout": "cerr", 
                         "useArchPT": false, 
@@ -745,9 +1529,52 @@
                     "size": 64
                 }, 
                 "simpoint_start_insts": [], 
-                "max_insts_any_thread": 0, 
-                "progress_interval": 0, 
-                "branchPred": null, 
+                "executeSetTraceTimeOnCommit": true, 
+                "tracer": {
+                    "eventq_index": 0, 
+                    "path": "system.cpu.tracer", 
+                    "type": "ExeTracer", 
+                    "name": "tracer", 
+                    "cxx_class": "Trace::ExeTracer"
+                }, 
+                "threadPolicy": "RoundRobin", 
+                "executeCommitLimit": 2, 
+                "fetch1LineWidth": 0, 
+                "branchPred": {
+                    "choiceCtrBits": 2, 
+                    "name": "branchPred", 
+                    "globalCtrBits": 2, 
+                    "numThreads": 1, 
+                    "indirectBranchPred": {
+                        "indirectSets": 256, 
+                        "indirectWays": 2, 
+                        "name": "indirectBranchPred", 
+                        "numThreads": 1, 
+                        "indirectHashTargets": true, 
+                        "instShiftAmt": 2, 
+                        "indirectHashGHR": true, 
+                        "indirectTagSize": 16, 
+                        "eventq_index": 0, 
+                        "cxx_class": "SimpleIndirectPredictor", 
+                        "indirectGHRBits": 13, 
+                        "path": "system.cpu.branchPred.indirectBranchPred", 
+                        "type": "SimpleIndirectPredictor", 
+                        "indirectPathLength": 3
+                    }, 
+                    "choicePredictorSize": 8192, 
+                    "instShiftAmt": 2, 
+                    "localCtrBits": 2, 
+                    "eventq_index": 0, 
+                    "BTBTagSize": 16, 
+                    "BTBEntries": 4096, 
+                    "cxx_class": "TournamentBP", 
+                    "path": "system.cpu.branchPred", 
+                    "localPredictorSize": 2048, 
+                    "localHistoryTableSize": 2048, 
+                    "type": "TournamentBP", 
+                    "RASSize": 16, 
+                    "globalPredictorSize": 8192
+                }, 
                 "dcache": {
                     "replacement_policy": {
                         "eventq_index": 0, 
@@ -851,22 +1678,9 @@
                     "sequential_access": false, 
                     "assoc": 2
                 }, 
-                "isa": [
-                    {
-                        "eventq_index": 0, 
-                        "path": "system.cpu.isa", 
-                        "type": "X86ISA", 
-                        "name": "isa", 
-                        "cxx_class": "X86ISA::ISA"
-                    }
-                ], 
-                "tracer": {
-                    "eventq_index": 0, 
-                    "path": "system.cpu.tracer", 
-                    "type": "ExeTracer", 
-                    "name": "tracer", 
-                    "cxx_class": "Trace::ExeTracer"
-                }
+                "path": "system.cpu", 
+                "fetch1ToFetch2ForwardDelay": 1, 
+                "decodeInputBufferSize": 3
             }
         ], 
         "multi_thread": false, 

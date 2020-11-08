@@ -275,6 +275,9 @@ else:
     MemConfig.config_mem(options, system)
     config_filesystem(system, options)
 
+if (options.cpu_type == "MinorCPU"):
+    MinorCPUConfig(options)
+
 if options.wait_gdb:
     for cpu in system.cpu:
         cpu.wait_for_remote_gdb = True

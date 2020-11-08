@@ -79,7 +79,7 @@
                 "app_path": "/proc", 
                 "name": "redirect_paths0", 
                 "host_paths": [
-                    "part1/timingSimpleCPU/fs/proc"
+                    "part1/part1a_results/fs/proc"
                 ], 
                 "eventq_index": 0, 
                 "cxx_class": "RedirectPath", 
@@ -90,7 +90,7 @@
                 "app_path": "/sys", 
                 "name": "redirect_paths1", 
                 "host_paths": [
-                    "part1/timingSimpleCPU/fs/sys"
+                    "part1/part1a_results/fs/sys"
                 ], 
                 "eventq_index": 0, 
                 "cxx_class": "RedirectPath", 
@@ -101,7 +101,7 @@
                 "app_path": "/tmp", 
                 "name": "redirect_paths2", 
                 "host_paths": [
-                    "part1/timingSimpleCPU/fs/tmp"
+                    "part1/part1a_results/fs/tmp"
                 ], 
                 "eventq_index": 0, 
                 "cxx_class": "RedirectPath", 
@@ -678,7 +678,7 @@
                         "pid": 100, 
                         "kvmInSE": false, 
                         "cxx_class": "Process", 
-                        "executable": "./part1/a.out", 
+                        "executable": "./part1/daxpy_part1a", 
                         "drivers": [], 
                         "system": "system", 
                         "gid": 100, 
@@ -687,7 +687,7 @@
                         "maxStackSize": 67108864, 
                         "ppid": 0, 
                         "type": "Process", 
-                        "cwd": "/home/min/a/elangovr/Coursework/ECE565/Assignment/assignment-1-v4-reena855", 
+                        "cwd": "/home/consus/a/elangovr/CourseWork/ECE565/Assignment/assignment-1-v4-reena855", 
                         "pgid": 100, 
                         "simpoint": 0, 
                         "euid": 100, 
@@ -695,7 +695,7 @@
                         "path": "system.cpu.workload", 
                         "name": "workload", 
                         "cmd": [
-                            "./part1/a.out"
+                            "./part1/daxpy_part1a"
                         ], 
                         "errout": "cerr", 
                         "useArchPT": false, 
