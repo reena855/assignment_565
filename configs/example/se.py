@@ -63,6 +63,7 @@ from common import CacheConfig
 from common import CpuConfig
 from common import ObjectList
 from common import MemConfig
+from common import MyMinorConfig
 from common.FileSystemConfig import config_filesystem
 from common.Caches import *
 from common.cpu2000 import *
@@ -162,7 +163,11 @@ else:
 
 
 (CPUClass, test_mem_mode, FutureClass) = Simulation.setCPUClass(options)
+print ("CPU class is %s\n" % (CPUClass))
+if (options.cpu_type == "MinorCPU"): #RE
+    MyMinorConfig.add_options(CPUClass,options) 
 CPUClass.numThreads = numThreads
+print ("CPU class is %s\n" % (CPUClass))
 
 # Check -- do not allow SMT with multiple CPUs
 if options.smt and options.num_cpus > 1:
@@ -275,8 +280,8 @@ else:
     MemConfig.config_mem(options, system)
     config_filesystem(system, options)
 
-if (options.cpu_type == "MinorCPU"):
-    MinorCPUConfig(options)
+#if (options.cpu_type == "MinorCPU"): #RE
+#    MinorCPUConfig(options)
 
 if options.wait_gdb:
     for cpu in system.cpu:
