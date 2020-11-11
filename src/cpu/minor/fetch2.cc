@@ -68,6 +68,7 @@ Fetch2::Fetch2(const std::string &name,
     outputWidth(params.decodeInputWidth),
     processMoreThanOneInput(params.fetch2CycleInput),
     branchPredictor(*params.branchPred),
+    disableBranchPred(params.disableBranchPred),
     fetchInfo(params.numThreads),
     threadPriority(0)
 {
@@ -194,18 +195,26 @@ Fetch2::predictBranch(MinorDynInstPtr inst, BranchData &branch)
     if (inst->staticInst->isControl() ||
         inst->staticInst->isSyscall())
     {
-        /* Tried to predict */
-        inst->triedToPredict = true;
 
-        DPRINTF(Branch, "Trying to predict for inst: %s\n", *inst);
+        if (disableBranchPred) {
+        
+            DPRINTF(Branch, "RE: Disabled prediction for inst: %s\n", *inst);
+        }
 
-        if (branchPredictor.predict(inst->staticInst,
-            inst->id.fetchSeqNum, inst_pc,
-            inst->id.threadId))
-        {
-            inst->predictedTaken = true;
-            inst->predictedTarget = inst_pc;
-            branch.target = inst_pc;
+        else {
+            /* Tried to predict */
+            inst->triedToPredict = true;
+
+            DPRINTF(Branch, "Trying to predict for inst: %s\n", *inst);
+
+            if (branchPredictor.predict(inst->staticInst,
+                inst->id.fetchSeqNum, inst_pc,
+                inst->id.threadId))
+            {
+                inst->predictedTaken = true;
+                inst->predictedTarget = inst_pc;
+                branch.target = inst_pc;
+            }
         }
     } else {
         DPRINTF(Branch, "Not attempting prediction for inst: %s\n", *inst);

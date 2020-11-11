@@ -54,6 +54,8 @@
 BPredUnit::BPredUnit(const Params *params)
     : SimObject(params),
       numThreads(params->numThreads),
+      degradeBranchPred(params->degradeBranchPred), // RE
+      myBranchPredAcc(params->myBranchPredAcc), // RE
       predHist(numThreads),
       BTB(params->BTBEntries,
           params->BTBTagSize,
@@ -65,6 +67,7 @@ BPredUnit::BPredUnit(const Params *params)
 {
     for (auto& r : RAS)
         r.init(params->RASSize);
+
 }
 
 void
@@ -175,6 +178,8 @@ BPredUnit::predict(const StaticInstPtr &inst, const InstSeqNum &seqNum,
     // Save off record of branch stuff so the RAS can be fixed
     // up once it's done.
 
+    int my_rand_acc = 0; //RE
+
     bool pred_taken = false;
     TheISA::PCState target = pc;
 
@@ -184,7 +189,7 @@ BPredUnit::predict(const StaticInstPtr &inst, const InstSeqNum &seqNum,
     void *bp_history = NULL;
     void *indirect_history = NULL;
 
-    if (inst->isUncondCtrl()) {
+    if (inst->isUncondCtrl()) { // RE: Not degrading uncond branch
         DPRINTF(Branch, "[tid:%i] [sn:%llu] "
             "Unconditional control\n",
             tid,seqNum);
@@ -194,6 +199,17 @@ BPredUnit::predict(const StaticInstPtr &inst, const InstSeqNum &seqNum,
     } else {
         ++condPredicted;
         pred_taken = lookup(tid, pc.instAddr(), bp_history);
+
+        // RE: Degarding BP Accuracy
+        if (degradeBranchPred) {
+            DPRINTF(Branch, "RE: Degrading Branch Pred\n");
+            my_rand_acc = rand() % 100 + 1;
+            if (my_rand_acc > myBranchPredAcc) {
+                DPRINTF(Branch, "RE: Flipped Prediction\n");
+                pred_taken = !pred_taken;
+            }
+            DPRINTF(Branch, "RE: Did not flip Prediction\n");
+        }
 
         DPRINTF(Branch, "[tid:%i] [sn:%llu] "
                 "Branch predictor predicted %i for PC %s\n",

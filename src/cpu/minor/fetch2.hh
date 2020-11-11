@@ -88,6 +88,9 @@ class Fetch2 : public Named
     /** Branch predictor passed from Python configuration */
     BPredUnit &branchPredictor;
 
+    /** RE: Disable Branch Prediction */
+    bool disableBranchPred;
+
   public:
     /* Public so that Pipeline can pass it to Fetch1 */
     std::vector<InputBuffer<ForwardLineData>> inputBuffer;

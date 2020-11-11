@@ -43,42 +43,9 @@ from m5.objects import MinorDefaultIntDivFU, MinorDefaultFloatSimdFU
 from m5.objects import MinorDefaultMemFU, MinorDefaultFloatSimdFU
 from m5.objects import MinorDefaultMiscFU
 
-#class MyFloatSIMDFU(MinorDefaultFloatSimdFU):
-#
-## From MinorDefaultFloatSimdFU
-## opLat = 6
-#
-## From MinorFU
-## issueLat = 1
-#
-#    def __init__(self, options=None):
-#        super(MinorDefaultFloatSimdFU, self).__init__()
-#
-#        if options and options.fpu_operation_latency:
-#            self.opLat = options.fpu_operation_latency
-#
-#        if  options and options.fpu_issue_latency:
-#            self.issueLat = options.fpu_issue_latency
-#
-#
-#class MyFUPool(MinorFUPool):
-#    def __init__(self, options=None):
-#        super(MinorFUPool, self).__init__()
-#        # Copied from src/mem/MinorCPU.py
-#        self.funcUnits = [MinorDefaultIntFU(), MinorDefaultIntFU(),
-#                      MinorDefaultIntMulFU(), MinorDefaultIntDivFU(),
-#                      MinorDefaultMemFU(), MinorDefaultMiscFU(),
-#                      # My FPU
-#                      MyFloatSIMDFU(options)]
-#
-
-
 def add_options(cpu, options):
-    #cpu.executeFucUnits = MyFUPool(options)
     cpu.executeFuncUnits.funcUnits[6].opLat = options.fpu_operation_latency
     cpu.executeFuncUnits.funcUnits[6].issueLat = options.fpu_issue_latency
-
-#class MyMinorCPU(MinorCPU):
-#    def __init__(self, options=None):
-#        super(MinorCPU, self).__init__()
-#        self.executeFuncUnits = MyFUPool(options)
+    cpu.disableBranchPred = options.disable_branch_prediction
+    cpu.branchPred.degradeBranchPred = options.degrade_branch_prediction
+    cpu.branchPred.myBranchPredAcc = options.branch_prediction_accuracy

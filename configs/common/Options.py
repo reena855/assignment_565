@@ -139,6 +139,9 @@ def addNoISAOptions(parser):
     # My Options : RE
     parser.add_option("--fpu_operation_latency", type="int", default=6)
     parser.add_option("--fpu_issue_latency", type="int", default=1)
+    parser.add_option("--disable_branch_prediction", action="store_true")
+    parser.add_option("--degrade_branch_prediction", action="store_true")
+    parser.add_option("--branch_prediction_accuracy", type="int", default=100)
 
 
 

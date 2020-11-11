@@ -54,6 +54,7 @@ from common import CacheConfig
 from common import CpuConfig
 from common import ObjectList
 from common import MemConfig
+from common import MyMinorConfig
 from common.FileSystemConfig import config_filesystem
 from common.Caches import *
 from common.cpu2000 import *
@@ -169,6 +170,8 @@ else:
     sys.exit(1)
 
 (CPUClass, test_mem_mode, FutureClass) = Simulation.setCPUClass(options)
+
+MyMinorConfig.add_options(CPUClass, options)
 CPUClass.numThreads = numThreads
 
 # Check -- do not allow SMT with multiple CPUs

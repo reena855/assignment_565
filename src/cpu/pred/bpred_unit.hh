@@ -266,6 +266,10 @@ class BPredUnit : public SimObject
     /** Number of the threads for which the branch history is maintained. */
     const unsigned numThreads;
 
+    /** RE: Degrading BP Options **/
+    bool degradeBranchPred;
+    int myBranchPredAcc;
+
 
     /**
      * The per-thread predictor history. This is used to update the predictor
