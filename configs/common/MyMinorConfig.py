@@ -47,5 +47,5 @@ def add_options(cpu, options):
     cpu.executeFuncUnits.funcUnits[6].opLat = options.fpu_operation_latency
     cpu.executeFuncUnits.funcUnits[6].issueLat = options.fpu_issue_latency
     cpu.disableBranchPred = options.disable_branch_prediction
-    cpu.branchPred.degradeBranchPred = options.degrade_branch_prediction
-    cpu.branchPred.myBranchPredAcc = options.branch_prediction_accuracy
+    cpu.degradeBranchPred = options.degrade_branch_prediction
+    cpu.myBranchPredAcc = options.branch_prediction_accuracy
