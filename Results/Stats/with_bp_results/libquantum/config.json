@@ -244,14 +244,14 @@
                 "fetch1FetchLimit": 1, 
                 "executeIssueLimit": 1, 
                 "power_gating_on_idle": false, 
-                "executeLSQMaxStoreBufferStoresPerCycle": 2, 
+                "executeLSQMaxStoreBufferStoresPerCycle": 1, 
                 "function_trace": false, 
                 "do_checkpoint_insts": true, 
                 "decodeInputWidth": 1, 
                 "cxx_class": "MinorCPU", 
                 "disableBranchPred": false, 
                 "executeMemoryIssueLimit": 1, 
-                "decodeCycleInput": true, 
+                "decodeCycleInput": false, 
                 "syscallRetryLatency": 10000, 
                 "system": "system", 
                 "executeLSQTransfersQueueSize": 2, 
@@ -282,8 +282,17 @@
                 "executeMemoryCommitLimit": 1, 
                 "do_quiesce": true, 
                 "type": "MinorCPU", 
-                "executeCycleInput": true, 
-                "executeAllowEarlyMemoryIssue": true, 
+                "interrupts": [
+                    {
+                        "eventq_index": 0, 
+                        "path": "system.cpu.interrupts", 
+                        "type": "ArmInterrupts", 
+                        "name": "interrupts", 
+                        "cxx_class": "ArmISA::Interrupts"
+                    }
+                ], 
+                "executeCycleInput": false, 
+                "executeCommitLimit": 1, 
                 "executeInputBufferSize": 7, 
                 "icache_port": {
                     "peer": "system.cpu.icache.cpu_side", 
@@ -514,15 +523,7 @@
                     "type": "ArmTLB", 
                     "size": 64
                 }, 
-                "interrupts": [
-                    {
-                        "eventq_index": 0, 
-                        "path": "system.cpu.interrupts", 
-                        "type": "ArmInterrupts", 
-                        "name": "interrupts", 
-                        "cxx_class": "ArmISA::Interrupts"
-                    }
-                ], 
+                "degradeBranchPred": false, 
                 "dcache_port": {
                     "peer": "system.cpu.dcache.cpu_side", 
                     "is_source": "True", 
@@ -1289,8 +1290,9 @@
                 "executeLSQRequestsQueueSize": 1, 
                 "pwr_gating_latency": 300, 
                 "fetch2CycleInput": true, 
-                "executeMaxAccessesInMemory": 2, 
+                "executeMaxAccessesInMemory": 1, 
                 "enableIdling": true, 
+                "myBranchPredAcc": 100, 
                 "executeLSQStoreBufferSize": 5, 
                 "workload": [
                     {
@@ -1422,7 +1424,7 @@
                     "cxx_class": "Trace::ExeTracer"
                 }, 
                 "threadPolicy": "RoundRobin", 
-                "executeCommitLimit": 1, 
+                "executeAllowEarlyMemoryIssue": true, 
                 "fetch1LineWidth": 0, 
                 "branchPred": {
                     "choiceCtrBits": 2, 
@@ -1445,7 +1447,6 @@
                         "type": "SimpleIndirectPredictor", 
                         "indirectPathLength": 3
                     }, 
-                    "degradeBranchPred": false, 
                     "choicePredictorSize": 8192, 
                     "instShiftAmt": 2, 
                     "localCtrBits": 2, 
@@ -1457,7 +1458,6 @@
                     "localPredictorSize": 2048, 
                     "localHistoryTableSize": 2048, 
                     "type": "TournamentBP", 
-                    "myBranchPredAcc": 100, 
                     "RASSize": 16, 
                     "globalPredictorSize": 8192
                 }, 

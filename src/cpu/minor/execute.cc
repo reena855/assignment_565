@@ -88,7 +88,9 @@ Execute::Execute(const std::string &name_,
     executeInfo(params.numThreads, ExecuteThreadInfo(params.executeCommitLimit)),
     interruptPriority(0),
     issuePriority(0),
-    commitPriority(0)
+    commitPriority(0),
+    degradeBranchPred(params.degradeBranchPred),
+    myBranchPredAcc(params.myBranchPredAcc)
 {
     if (commitLimit < 1) {
         fatal("%s: executeCommitLimit must be >= 1 (%d)\n", name_,
@@ -216,6 +218,16 @@ Execute::tryToBranch(MinorDynInstPtr inst, Fault fault, BranchData &branch)
     ThreadContext *thread = cpu.getContext(inst->id.threadId);
     const TheISA::PCState &pc_before = inst->pc;
     TheISA::PCState target = thread->pcState();
+    
+    unsigned int my_rand_num; // RE
+    bool flip_prediction = false; // RE
+
+    if (degradeBranchPred) {
+        my_rand_num = rand() % 100 + 1;
+	if (my_rand_num > myBranchPredAcc) {
+            flip_prediction = true;
+        }
+    }
 
     /* Force a branch for SerializeAfter/SquashAfter instructions
      * at the end of micro-op sequence when we're not suspended */
@@ -239,11 +251,13 @@ Execute::tryToBranch(MinorDynInstPtr inst, Fault fault, BranchData &branch)
 
     if (fault == NoFault)
     {
+
         TheISA::advancePC(target, inst->staticInst);
         thread->pcState(target);
 
-        DPRINTF(Branch, "Advancing current PC from: %s to: %s\n",
+        DPRINTF(Branch, "RE: Advancing current PC from: %s to: %s\n",
             pc_before, target);
+
     }
 
     if (inst->predictedTaken && !force_branch) {
@@ -261,11 +275,21 @@ Execute::tryToBranch(MinorDynInstPtr inst, Fault fault, BranchData &branch)
              *  carry on.
              *  Note that this information to the branch predictor might get
              *  overwritten by a "real" branch during this cycle */
-            DPRINTF(Branch, "Predicted a branch from 0x%x to 0x%x correctly"
+            DPRINTF(Branch, "RE: Predicted a branch from 0x%x to 0x%x correctly"
                 " inst: %s\n",
                 inst->pc.instAddr(), inst->predictedTarget.instAddr(), *inst);
-
+        
             reason = BranchData::CorrectlyPredictedBranch;
+            
+            /* RE: Degrading Branch Prediction */
+            if (flip_prediction) {
+                reason = BranchData::DegradedPrediction;
+            	/* Deliberately Degraded Branch prediction */
+            	DPRINTF(Branch, "RE: Flipped Prediction from 0x%x to 0x%x"
+            		" inst: %s\n",
+            		inst->pc.instAddr(), inst->predictedTarget.instAddr(), 
+                        *inst);
+	    }
         } else {
             /* Branch prediction got the wrong target */
             DPRINTF(Branch, "Predicted a branch from 0x%x to 0x%x"
@@ -284,6 +308,14 @@ Execute::tryToBranch(MinorDynInstPtr inst, Fault fault, BranchData &branch)
     } else {
         /* No branch at all */
         reason = BranchData::NoBranch;
+        
+        /* RE: Degrading Branch Prediction for not taken */
+        //if (flip_prediction) {
+        //    reason = BranchData::DegradedPrediction;
+            /* Deliberately Degraded Branch prediction */
+        //    DPRINTF(Branch, "RE: (Not Taken) Flipped Prediction for inst: %s\n",
+        //            *inst);
+	//}
     }
 
     updateBranchData(inst->id.threadId, reason, inst, target, branch);

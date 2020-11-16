@@ -109,6 +109,7 @@ Pipeline::regStats()
     Ticked::regStats();
 
     fetch2.regStats();
+    fetch1.regStats(); // RE
 }
 
 void

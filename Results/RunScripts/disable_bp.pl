@@ -29,11 +29,11 @@ for $opt("with_bp", "disable_bp") {
 		           " --l2cache";
 
 		if ($opt eq "disable_bp") {
-			$run_cmd = $rum_cmd . " --disable_branch_prediction";
+			$run_cmd = $run_cmd . " --disable_branch_prediction";
 		}
 		
                 if ($debug_mode) {
-			$run_cmd = $rum_cmd . " --debug-flags=Branch";
+			$run_cmd = $run_cmd . " --debug-flags=Branch";
 		}
 		
 		print ("$run_cmd\n");

@@ -225,19 +225,19 @@ class MinorCPU(BaseCPU):
         "Size of input buffer to Decode in cycles-worth of insts.")
     decodeToExecuteForwardDelay = Param.Cycles(1,
         "Forward cycle delay from Decode to Execute (1 means next cycle)")
-    decodeInputWidth = Param.Unsigned(1,
+    decodeInputWidth = Param.Unsigned(1, # RE: was 2
         "Width (in instructions) of input to Decode (and implicitly"
         " Decode's own width)")
-    decodeCycleInput = Param.Bool(True,
+    decodeCycleInput = Param.Bool(False, # RE: was True
         "Allow Decode to pack instructions from more than one input cycle"
         " to fill its output each cycle")
 
-    executeInputWidth = Param.Unsigned(1,
+    executeInputWidth = Param.Unsigned(1, # RE: was 2
         "Width (in instructions) of input to Execute")
-    executeCycleInput = Param.Bool(True,
+    executeCycleInput = Param.Bool(False, # RE: was True
         "Allow Execute to use instructions from more than one input cycle"
         " each cycle")
-    executeIssueLimit = Param.Unsigned(1,
+    executeIssueLimit = Param.Unsigned(1, # RE: was 2
         "Number of issuable instructions in Execute each cycle")
     executeMemoryIssueLimit = Param.Unsigned(1,
         "Number of issuable memory instructions in Execute each cycle")
@@ -250,10 +250,10 @@ class MinorCPU(BaseCPU):
     executeMemoryWidth = Param.Unsigned(0,
         "Width (and snap) in bytes of the data memory interface. (0 mean use"
         " the system cacheLineSize)")
-    executeMaxAccessesInMemory = Param.Unsigned(2,
+    executeMaxAccessesInMemory = Param.Unsigned(1, # RE: was 2
         "Maximum number of concurrent accesses allowed to the memory system"
         " from the dcache port")
-    executeLSQMaxStoreBufferStoresPerCycle = Param.Unsigned(2,
+    executeLSQMaxStoreBufferStoresPerCycle = Param.Unsigned(1, # RE: was 2
         "Maximum number of stores that the store buffer can issue per cycle")
     executeLSQRequestsQueueSize = Param.Unsigned(1,
         "Size of LSQ requests queue (address translation queue)")
@@ -281,7 +281,11 @@ class MinorCPU(BaseCPU):
         "Enable cycle skipping when the processor is idle")
 
     disableBranchPred = Param.Bool(False,
-        " RE: Disable branch prediction")
+        " RE:Disable branch prediction")
+
+    degradeBranchPred = Param.Bool(False, "RE: Degrade BP")
+
+    myBranchPredAcc = Param.Int(100, "RE: Degraded BP Acc")
     
     branchPred = Param.BranchPredictor(TournamentBP(numThreads = Parent.numThreads), "Branch Predictor")
     

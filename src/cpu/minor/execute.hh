@@ -201,6 +201,10 @@ class Execute : public Named
     ThreadID issuePriority;
     ThreadID commitPriority;
 
+    /** RE: Degrade Branch Prediction **/
+    bool degradeBranchPred;
+    unsigned int myBranchPredAcc;
+   
   protected:
     friend std::ostream &operator <<(std::ostream &os, DrainState state);
 

@@ -69,6 +69,8 @@ Fetch2::Fetch2(const std::string &name,
     processMoreThanOneInput(params.fetch2CycleInput),
     branchPredictor(*params.branchPred),
     disableBranchPred(params.disableBranchPred),
+    //degradeBranchPred(params.degradeBranchPred),
+    //myBranchPredAcc(params.myBranchPredAcc),
     fetchInfo(params.numThreads),
     threadPriority(0)
 {
@@ -127,25 +129,31 @@ Fetch2::updateBranchPrediction(const BranchData &branch)
     MinorDynInstPtr inst = branch.inst;
 
     /* Don't even consider instructions we didn't try to predict or faults */
-    if (inst->isFault() || !inst->triedToPredict)
-        return;
-
+    if (inst->isFault() || !inst->triedToPredict) {
+	return;
+    }
     switch (branch.reason) {
       case BranchData::NoBranch:
+        DPRINTF(Branch, "RE: Reason remained NoBranch\n");
         /* No data to update */
+        noBranchPredictions++; // RE
         break;
       case BranchData::Interrupt:
         /* Never try to predict interrupts */
+        noBranchPredictions++; // RE
         break;
       case BranchData::SuspendThread:
         /* Don't need to act on suspends */
+        noBranchPredictions++; // RE
         break;
       case BranchData::HaltFetch:
         /* Don't need to act on fetch wakeup */
+        noBranchPredictions++; // RE
         break;
       case BranchData::BranchPrediction:
         /* Shouldn't happen.  Fetch2 is the only source of
          *  BranchPredictions */
+        noBranchPredictions++; // RE
         break;
       case BranchData::UnpredictedBranch:
         /* Unpredicted branch or barrier */
@@ -156,22 +164,34 @@ Fetch2::updateBranchPrediction(const BranchData &branch)
         // using the branch prediction code.
         branchPredictor.update(inst->id.fetchSeqNum,
             inst->id.threadId);
+        incorrectBranchPredictions++; // RE
+        break;
+      case BranchData::DegradedPrediction: // RE
+        /* RE: Degraded Branch Prediction */
+        DPRINTF(Branch, "RE: Degraded Branch Prediction for inst: %s\n", *inst);
+        branchPredictor.squash(inst->id.fetchSeqNum,
+            branch.target /* Not used */, false, inst->id.threadId);
+        branchPredictor.update(inst->id.fetchSeqNum,
+            inst->id.threadId);
+        degradedBranchPredictions++;
         break;
       case BranchData::CorrectlyPredictedBranch:
         /* Predicted taken, was taken */
         DPRINTF(Branch, "Branch predicted correctly inst: %s\n", *inst);
         branchPredictor.update(inst->id.fetchSeqNum,
             inst->id.threadId);
+        correctBranchPredictions++; // RE
         break;
       case BranchData::BadlyPredictedBranch:
         /* Predicted taken, not taken */
-        DPRINTF(Branch, "Branch mis-predicted inst: %s\n", *inst);
+        DPRINTF(Branch, "RE: Branch mis-predicted inst: %s\n", *inst);
         branchPredictor.squash(inst->id.fetchSeqNum,
             branch.target /* Not used */, false, inst->id.threadId);
         // Update after squashing to accomodate O3CPU
         // using the branch prediction code.
         branchPredictor.update(inst->id.fetchSeqNum,
             inst->id.threadId);
+        incorrectBranchPredictions++; // RE
         break;
       case BranchData::BadlyPredictedBranchTarget:
         /* Predicted taken, was taken but to a different target */
@@ -179,6 +199,7 @@ Fetch2::updateBranchPrediction(const BranchData &branch)
             *inst, branch.target);
         branchPredictor.squash(inst->id.fetchSeqNum,
             branch.target, true, inst->id.threadId);
+        incorrectBranchPredictions++; // RE
         break;
     }
 }
@@ -191,18 +212,20 @@ Fetch2::predictBranch(MinorDynInstPtr inst, BranchData &branch)
 
     assert(!inst->predictedTaken);
 
+    bool triedPrediction; // RE
     /* Skip non-control/sys call instructions */
     if (inst->staticInst->isControl() ||
         inst->staticInst->isSyscall())
     {
 
         if (disableBranchPred) {
-        
+     	    triedPrediction = false; // RE	   
             DPRINTF(Branch, "RE: Disabled prediction for inst: %s\n", *inst);
         }
 
         else {
             /* Tried to predict */
+     	    triedPrediction = true; // RE	   
             inst->triedToPredict = true;
 
             DPRINTF(Branch, "Trying to predict for inst: %s\n", *inst);
@@ -211,35 +234,47 @@ Fetch2::predictBranch(MinorDynInstPtr inst, BranchData &branch)
                 inst->id.fetchSeqNum, inst_pc,
                 inst->id.threadId))
             {
+                DPRINTF(Branch, "RE: Predicted Taken, PC:%s Target:%s\n", inst->pc, inst_pc);
                 inst->predictedTaken = true;
                 inst->predictedTarget = inst_pc;
                 branch.target = inst_pc;
+                numTaken++;
             }
-        }
+            else {
+                DPRINTF(Branch, "RE: Predicted Not Taken, PC:%s Target:%s\n", inst->pc, inst_pc);
+                inst->predictedTaken = true;
+                inst->predictedTarget = inst_pc;
+                branch.target = inst_pc;
+		numNotTaken++;
+            }
+	}
     } else {
+     	triedPrediction = false; // RE	   
         DPRINTF(Branch, "Not attempting prediction for inst: %s\n", *inst);
     }
 
     /* If we predict taken, set branch and update sequence numbers */
-    if (inst->predictedTaken) {
+    //if (inst->predictedTaken) { // RE
+    if (triedPrediction) { // RE: Create branch for not taken case as well
         /* Update the predictionSeqNum and remember the streamSeqNum that it
          *  was associated with */
-        thread.expectedStreamSeqNum = inst->id.streamSeqNum;
+    	thread.expectedStreamSeqNum = inst->id.streamSeqNum;
 
-        BranchData new_branch = BranchData(BranchData::BranchPrediction,
-            inst->id.threadId,
-            inst->id.streamSeqNum, thread.predictionSeqNum + 1,
-            inst->predictedTarget, inst);
+    	BranchData new_branch = BranchData(BranchData::BranchPrediction,
+    	    inst->id.threadId,
+    	    inst->id.streamSeqNum, thread.predictionSeqNum + 1,
+    	    inst->predictedTarget, inst);
 
-        /* Mark with a new prediction number by the stream number of the
-         *  instruction causing the prediction */
-        thread.predictionSeqNum++;
-        branch = new_branch;
-
-        DPRINTF(Branch, "Branch predicted taken inst: %s target: %s"
-            " new predictionSeqNum: %d\n",
-            *inst, inst->predictedTarget, thread.predictionSeqNum);
-    }
+    	/* Mark with a new prediction number by the stream number of the
+    	 *  instruction causing the prediction */
+    	thread.predictionSeqNum++;
+    	branch = new_branch;
+    	
+    	// RE: Changed default "predicted taken" to "predicted %s"
+    	DPRINTF(Branch, "Branch predicted %s inst: %s target: %s"
+    	    " new predictionSeqNum: %d\n", inst->predictedTaken
+    	    *inst, inst->predictedTarget, thread.predictionSeqNum);
+   }
 }
 
 void
@@ -644,6 +679,36 @@ Fetch2::regStats()
     amoInstructions
         .name(name() + ".amo_instructions")
         .desc("Number of memory atomic instructions successfully decoded")
+        .flags(total);
+    
+    degradedBranchPredictions
+        .name(name() + ".degraded_branch_predictions")
+        .desc("RE: Number of flipped predictions")
+        .flags(total);
+    
+    correctBranchPredictions
+        .name(name() + ".correct_branch_predictions")
+        .desc("RE: Number of correct predictions")
+        .flags(total);
+    
+    incorrectBranchPredictions
+        .name(name() + ".incorrect_branch_predictions")
+        .desc("RE: Number of incorrect predictions")
+        .flags(total);
+    
+    noBranchPredictions
+        .name(name() + ".no_branch_predictions")
+        .desc("RE: no branch case")
+        .flags(total);
+    
+    numTaken
+        .name(name() + ".taken_branch_predictions")
+        .desc("RE: Number of taken branch predictions")
+        .flags(total);
+    
+    numNotTaken
+        .name(name() + ".not_taken_branch_predictions")
+        .desc("RE: Number of not taken branch predictions")
         .flags(total);
 }
 

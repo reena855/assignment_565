@@ -90,7 +90,13 @@ class Fetch2 : public Named
 
     /** RE: Disable Branch Prediction */
     bool disableBranchPred;
+    
+    /** RE: Degrade Branch Prediction */
+    //bool degradeBranchPred;
 
+    /** RE: Degraded Branch Prediction Accuracy*/
+    //bool myBranchPredAcc;
+  
   public:
     /* Public so that Pipeline can pass it to Fetch1 */
     std::vector<InputBuffer<ForwardLineData>> inputBuffer;
@@ -173,6 +179,12 @@ class Fetch2 : public Named
     Stats::Scalar loadInstructions;
     Stats::Scalar storeInstructions;
     Stats::Scalar amoInstructions;
+    Stats::Scalar degradedBranchPredictions; // RE
+    Stats::Scalar correctBranchPredictions; // RE
+    Stats::Scalar incorrectBranchPredictions; // RE
+    Stats::Scalar noBranchPredictions; // RE
+    Stats::Scalar numTaken; // RE
+    Stats::Scalar numNotTaken; // RE
 
   protected:
     /** Get a piece of data to work on from the inputBuffer, or 0 if there

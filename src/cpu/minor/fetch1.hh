@@ -281,6 +281,13 @@ class Fetch1 : public Named
     std::vector<Fetch1ThreadInfo> fetchInfo;
     ThreadID threadPriority;
 
+    /** RE: Stats */
+    Stats::Scalar numDegraded;
+    Stats::Scalar otherIncorrectPred;
+
+
+
+
     /** State of memory access for head instruction fetch */
     enum IcacheState
     {
@@ -394,6 +401,9 @@ class Fetch1 : public Named
 
     /** Pass on input/buffer data to the output if you can */
     void evaluate();
+   
+    /** RE: Track Stats */ 
+    void regStats();
 
     /** Initiate fetch1 fetching */
     void wakeupFetch(ThreadID tid);

@@ -266,11 +266,6 @@ class BPredUnit : public SimObject
     /** Number of the threads for which the branch history is maintained. */
     const unsigned numThreads;
 
-    /** RE: Degrading BP Options **/
-    bool degradeBranchPred;
-    int myBranchPredAcc;
-
-
     /**
      * The per-thread predictor history. This is used to update the predictor
      * as instructions are committed, or restore it to the proper state after
@@ -291,6 +286,12 @@ class BPredUnit : public SimObject
     Stats::Scalar lookups;
     /** Stat for number of conditional branches predicted. */
     Stats::Scalar condPredicted;
+    /** RE: Stat for number of conditional branches predicted taken. */
+    Stats::Scalar condPredictedTaken;
+    /** RE: Stat for number of conditional branches predicted not taken. */
+    Stats::Scalar condPredictedNotTaken;
+    /** RE: Stat for number of unconditional branches. */
+    Stats::Scalar uncondPredicted;
     /** Stat for number of conditional branches predicted incorrectly. */
     Stats::Scalar condIncorrect;
     /** Stat for number of BTB lookups. */

@@ -66,8 +66,6 @@ class BranchPredictor(SimObject):
 
     indirectBranchPred = Param.IndirectPredictor(SimpleIndirectPredictor(),
       "Indirect branch predictor, set to NULL to disable indirect predictions")
-    degradeBranchPred = Param.Bool(False, "RE: Degrade BPred")
-    myBranchPredAcc = Param.Int(100, "RE: Degraded BP Acc")
 
 class LocalBP(BranchPredictor):
     type = 'LocalBP'

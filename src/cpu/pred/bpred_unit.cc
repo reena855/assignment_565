@@ -54,8 +54,6 @@
 BPredUnit::BPredUnit(const Params *params)
     : SimObject(params),
       numThreads(params->numThreads),
-      degradeBranchPred(params->degradeBranchPred), // RE
-      myBranchPredAcc(params->myBranchPredAcc), // RE
       predHist(numThreads),
       BTB(params->BTBEntries,
           params->BTBTagSize,
@@ -83,6 +81,21 @@ BPredUnit::regStats()
     condPredicted
         .name(name() + ".condPredicted")
         .desc("Number of conditional branches predicted")
+        ;
+    
+    condPredictedTaken // RE
+        .name(name() + ".condPredictedTaken")
+        .desc("RE: Number of conditional branches predicted taken")
+        ;
+    
+    condPredictedNotTaken // RE
+        .name(name() + ".condPredictedNotTaken")
+        .desc("RE: number of conditional branches predicted not taken")
+        ;
+    
+    uncondPredicted // re
+        .name(name() + ".uncondPredicted")
+        .desc("RE: number of unconditional branches")
         ;
 
     condIncorrect
@@ -178,8 +191,6 @@ BPredUnit::predict(const StaticInstPtr &inst, const InstSeqNum &seqNum,
     // Save off record of branch stuff so the RAS can be fixed
     // up once it's done.
 
-    int my_rand_acc = 0; //RE
-
     bool pred_taken = false;
     TheISA::PCState target = pc;
 
@@ -189,31 +200,22 @@ BPredUnit::predict(const StaticInstPtr &inst, const InstSeqNum &seqNum,
     void *bp_history = NULL;
     void *indirect_history = NULL;
 
-    if (inst->isUncondCtrl()) { // RE: Not degrading uncond branch
+    if (inst->isUncondCtrl()) { 
         DPRINTF(Branch, "[tid:%i] [sn:%llu] "
             "Unconditional control\n",
             tid,seqNum);
         pred_taken = true;
         // Tell the BP there was an unconditional branch.
         uncondBranch(tid, pc.instAddr(), bp_history);
+        ++uncondPredicted; // RE
     } else {
         ++condPredicted;
         pred_taken = lookup(tid, pc.instAddr(), bp_history);
 
-        // RE: Degarding BP Accuracy
-        if (degradeBranchPred) {
-            DPRINTF(Branch, "RE: Degrading Branch Pred\n");
-            my_rand_acc = rand() % 100 + 1;
-            if (my_rand_acc > myBranchPredAcc) {
-                DPRINTF(Branch, "RE: Flipped Prediction\n");
-                pred_taken = !pred_taken;
-            }
-            DPRINTF(Branch, "RE: Did not flip Prediction\n");
-        }
-
         DPRINTF(Branch, "[tid:%i] [sn:%llu] "
                 "Branch predictor predicted %i for PC %s\n",
                 tid, seqNum,  pred_taken, pc);
+    
     }
 
     const bool orig_pred_taken = pred_taken;
@@ -248,7 +250,9 @@ BPredUnit::predict(const StaticInstPtr &inst, const InstSeqNum &seqNum,
             DPRINTF(Branch, "[tid:%i] [sn:%llu] Instruction %s is a return, "
                     "RAS predicted target: %s, RAS index: %i\n",
                     tid, seqNum, pc, target, predict_record.RASIndex);
-        } else {
+            condPredictedTaken++; // RE
+
+         } else {
 
             if (inst->isCall()) {
                 RAS[tid].push(pc);
@@ -275,6 +279,7 @@ BPredUnit::predict(const StaticInstPtr &inst, const InstSeqNum &seqNum,
                             "[tid:%i] [sn:%llu] Instruction %s predicted "
                             "target is %s\n",
                             tid, seqNum, pc, target);
+                    condPredictedTaken++; // RE
                 } else {
                     DPRINTF(Branch, "[tid:%i] [sn:%llu] BTB doesn't have a "
                             "valid entry\n",tid,seqNum);
@@ -293,6 +298,7 @@ BPredUnit::predict(const StaticInstPtr &inst, const InstSeqNum &seqNum,
                         RAS[tid].pop();
                         predict_record.pushedRAS = false;
                     }
+                    condPredictedNotTaken++; // RE
                     TheISA::advancePC(target, inst);
                 }
             } else {
@@ -307,6 +313,7 @@ BPredUnit::predict(const StaticInstPtr &inst, const InstSeqNum &seqNum,
                             "Instruction %s predicted "
                             "indirect target is %s\n",
                             tid, seqNum, pc, target);
+                    condPredictedTaken++; // RE
                 } else {
                     ++indirectMisses;
                     pred_taken = false;
@@ -323,6 +330,7 @@ BPredUnit::predict(const StaticInstPtr &inst, const InstSeqNum &seqNum,
                         predict_record.pushedRAS = false;
                     }
                     TheISA::advancePC(target, inst);
+                    condPredictedNotTaken++; // RE
                 }
                 iPred->recordIndirect(pc.instAddr(), target.instAddr(), seqNum,
                         tid);
@@ -333,6 +341,7 @@ BPredUnit::predict(const StaticInstPtr &inst, const InstSeqNum &seqNum,
            predict_record.wasReturn = true;
         }
         TheISA::advancePC(target, inst);
+        condPredictedNotTaken++; // RE: Includes Unconditional
     }
     predict_record.target = target.instAddr();
 

@@ -197,6 +197,24 @@ Fetch1::fetchLine(ThreadID tid)
     thread.pc.set(aligned_pc + request_size);
 }
 
+
+/** RE: Degraded Predictions Stat */
+void
+Fetch1::regStats()
+{
+    using namespace Stats;
+
+    numDegraded
+        .name(name() + ".degraded_predictions")
+        .desc("RE: Number of predictions degraded")
+        .flags(total);
+
+    otherIncorrectPred
+        .name(name() + ".other_incorrect_predictions")
+        .desc("RE: Number of other incorrect predictions")
+        .flags(total);
+}
+
 std::ostream &
 operator <<(std::ostream &os, Fetch1::IcacheState state)
 {
@@ -499,9 +517,15 @@ Fetch1::changeStream(const BranchData &branch)
         DPRINTF(Fetch, "Halting fetch\n");
         thread.state = FetchHalted;
         break;
+      case BranchData::DegradedPrediction:
+        DPRINTF(Fetch, "RE: Changing Stream because of Degraded Prediction\n");
+        thread.state = FetchRunning;
+        numDegraded++;
+        break;
       default:
         DPRINTF(Fetch, "Changing stream on branch: %s\n", branch);
         thread.state = FetchRunning;
+        otherIncorrectPred++;
         break;
     }
     thread.pc = branch.target;

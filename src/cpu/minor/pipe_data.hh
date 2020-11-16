@@ -92,7 +92,9 @@ class BranchData /* : public ReportIF, public BubbleIF */
         /* Branch from an interrupt (no instruction) */
         Interrupt,
         /* Stop fetching in anticipation of of draining */
-        HaltFetch
+        HaltFetch,
+        /* RE: Degraded Prediction */
+        DegradedPrediction
     };
 
     /** Is a request with this reason actually a request to change the

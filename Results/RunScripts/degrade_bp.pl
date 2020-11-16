@@ -17,9 +17,10 @@ for $acc(0,50,100) {
 		}
 		
 
-		$run_cmd = "./build/ARM/gem5.opt".
-		           " -d ${stat_dir}".
-		           " configs/spec2k6/run.py".
+		$gem5_run = "./build/ARM/gem5.opt".
+		           " -d ${stat_dir}";
+
+		$config_script = " configs/spec2k6/run.py".
 		           " -b $bench".
 		           " --maxinsts=100000000".
 			   " --cpu-type=MinorCPU".
@@ -31,9 +32,11 @@ for $acc(0,50,100) {
 			   " --branch_prediction_accuracy=$acc";
 
                 if ($debug_mode) {
-			$run_cmd = $rum_cmd . " --debug-flags=Branch";
+			$gem5_run = $gem5_run . " --debug-flags=Fetch";
 		}
 		
+		$run_cmd = $gem5_run . $config_script;
+
 		print ("$run_cmd\n");
 		system($run_cmd);
 	}
