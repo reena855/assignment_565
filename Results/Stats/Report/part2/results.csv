@@ -1,0 +1,30 @@
+
+
+bzip2
+
+option, condPredicted, condIncorrect, degraded_predictions, correct_predictions, cpi, ipc
+with_bp, 21112041, 8682191, 0, 8458879, 3.699743, 0.270289
+disable_bp, 0, 0, 0, 0, 3.795608, 0.263462
+degrade_bp_0, 25465444, 17141070, 5246676, 0, 4.500544, 0.222195
+degrade_bp_50, 24054514, 13960419, 3181947, 3180651, 4.192004, 0.238549
+degrade_bp_100, 21112041, 8682191, 0, 8458879, 3.699743, 0.270289
+
+
+libquantum
+
+option, condPredicted, condIncorrect, degraded_predictions, correct_predictions, cpi, ipc
+with_bp, 26156552, 6987102, 0, 12483205, 3.133116, 0.319171
+disable_bp, 0, 0, 0, 0, 4.325050, 0.231211
+degrade_bp_0, 29412908, 19470307, 5949186, 0, 4.413866, 0.226559
+degrade_bp_50, 28434380, 15120065, 4352366, 4350242, 3.982955, 0.251070
+degrade_bp_100, 26156552, 6987102, 0, 12483205, 3.133116, 0.319171
+
+
+sjeng
+
+option, condPredicted, condIncorrect, degraded_predictions, correct_predictions, cpi, ipc
+with_bp, 22766496, 6670127, 0, 14367650, 7.557632, 0.132317
+disable_bp, 0, 0, 0, 0, 7.591099, 0.131733
+degrade_bp_0, 27672020, 21037777, 4541483, 0, 8.080493, 0.123755
+degrade_bp_50, 27120770, 17852939, 3184772, 3184838, 7.918715, 0.126283
+degrade_bp_100, 22766511, 6670136, 0, 14367641, 7.557632, 0.132317

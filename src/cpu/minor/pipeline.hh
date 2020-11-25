@@ -42,12 +42,14 @@
  *  between the CPU and its grubby implementation details clean.
  */
 
+
 #ifndef __CPU_MINOR_PIPELINE_HH__
 #define __CPU_MINOR_PIPELINE_HH__
 
 #include "cpu/minor/activity.hh"
 #include "cpu/minor/cpu.hh"
 #include "cpu/minor/decode.hh"
+#include "cpu/minor/dummy_execute.hh"
 #include "cpu/minor/execute.hh"
 #include "cpu/minor/fetch1.hh"
 #include "cpu/minor/fetch2.hh"
@@ -58,14 +60,14 @@ namespace Minor
 {
 
 /**
- * @namespace Minor
- *
- * Minor contains all the definitions within the MinorCPU apart from the CPU
- * class itself
- */
+ *  * @namespace Minor
+ *   *
+ *    * Minor contains all the definitions within the MinorCPU apart from the CPU
+ *     * class itself
+ *      */
 
 /** The constructed pipeline.  Kept out of MinorCPU to keep the interface
- *  between the CPU and its grubby implementation details clean. */
+ *  *  between the CPU and its grubby implementation details clean. */
 class Pipeline : public Ticked
 {
   protected:
@@ -77,17 +79,19 @@ class Pipeline : public Ticked
     Latch<ForwardLineData> f1ToF2;
     Latch<BranchData> f2ToF1;
     Latch<ForwardInstData> f2ToD;
-    Latch<ForwardInstData> dToE;
+    Latch<ForwardInstData> dToDE;
+    Latch<ForwardInstData> dEToE;
     Latch<BranchData> eToF1;
 
     Execute execute;
+    dummyExecute dExecute;
     Decode decode;
     Fetch2 fetch2;
     Fetch1 fetch1;
 
     /** Activity recording for the pipeline.  This is access through the CPU
-     *  by the pipeline stages but belongs to the Pipeline as it is the
-     *  cleanest place to initialise it */
+ *      *  by the pipeline stages but belongs to the Pipeline as it is the
+ *           *  cleanest place to initialise it */
     MinorActivityRecorder activityRecorder;
 
   public:
@@ -97,7 +101,7 @@ class Pipeline : public Ticked
         /* A stage representing wakeup of the whole processor */
         CPUStageId = 0,
         /* Real pipeline stages */
-        Fetch1StageId, Fetch2StageId, DecodeStageId, ExecuteStageId,
+        Fetch1StageId, Fetch2StageId, DecodeStageId,dummyExecuteStageId, ExecuteStageId,
         Num_StageId /* Stage count */
     };
 
@@ -109,7 +113,7 @@ class Pipeline : public Ticked
 
   public:
     /** Wake up the Fetch unit.  This is needed on thread activation esp.
-     *  after quiesce wakeup */
+ *      *  after quiesce wakeup */
     void wakeupFetch(ThreadID tid);
 
     /** Try to drain the CPU */
@@ -121,7 +125,7 @@ class Pipeline : public Ticked
     bool isDrained();
 
     /** A custom evaluate allows report in the right place (between
-     *  stages and pipeline advance) */
+ *      *  stages and pipeline advance) */
     void evaluate() override;
 
     void minorTrace() const;
@@ -130,7 +134,7 @@ class Pipeline : public Ticked
     void regStats();
 
     /** Functions below here are BaseCPU operations passed on to pipeline
-     *  stages */
+ *      *  stages */
 
     /** Return the IcachePort belonging to Fetch1 for the CPU */
     MinorCPU::MinorCPUPort &getInstPort();
@@ -144,3 +148,113 @@ class Pipeline : public Ticked
 }
 
 #endif /* __CPU_MINOR_PIPELINE_HH__ */
+
+
+
+
+
+//#ifndef __CPU_MINOR_PIPELINE_HH__
+//#define __CPU_MINOR_PIPELINE_HH__
+//
+//#include "cpu/minor/activity.hh"
+//#include "cpu/minor/cpu.hh"
+//#include "cpu/minor/decode.hh"
+//#include "cpu/minor/execute.hh"
+//#include "cpu/minor/execute1.hh"
+//#include "cpu/minor/fetch1.hh"
+//#include "cpu/minor/fetch2.hh"
+//#include "params/MinorCPU.hh"
+//#include "sim/ticked_object.hh"
+//
+//namespace Minor
+//{
+//
+///**
+// * @namespace Minor
+// *
+// * Minor contains all the definitions within the MinorCPU apart from the CPU
+// * class itself
+// */
+//
+///** The constructed pipeline.  Kept out of MinorCPU to keep the interface
+// *  between the CPU and its grubby implementation details clean. */
+//class Pipeline : public Ticked
+//{
+//  protected:
+//    MinorCPU &cpu;
+//
+//    /** Allow cycles to be skipped when the pipeline is idle */
+//    bool allow_idling;
+//
+//    Latch<ForwardLineData> f1ToF2;
+//    Latch<BranchData> f2ToF1;
+//    Latch<ForwardInstData> f2ToD;
+//    Latch<ForwardInstData> dToDE; // RE
+//    Latch<ForwardInstData> deToE;
+//    Latch<BranchData> eToF1;
+//
+//    Execute execute;
+//    Execute1 execute1; // RE
+//    Decode decode;
+//    Fetch2 fetch2;
+//    Fetch1 fetch1;
+//
+//    /** Activity recording for the pipeline.  This is access through the CPU
+//     *  by the pipeline stages but belongs to the Pipeline as it is the
+//     *  cleanest place to initialise it */
+//    MinorActivityRecorder activityRecorder;
+//
+//  public:
+//    /** Enumerated ids of the 'stages' for the activity recorder */
+//    enum StageId
+//    {
+//        /* A stage representing wakeup of the whole processor */
+//        CPUStageId = 0,
+//        /* Real pipeline stages */
+//        Fetch1StageId, Fetch2StageId, DecodeStageId, Execute1StageId, // RE
+//        ExecuteStageId, Num_StageId /* Stage count */
+//    };
+//
+//    /** True after drain is called but draining isn't complete */
+//    bool needToSignalDrained;
+//
+//  public:
+//    Pipeline(MinorCPU &cpu_, MinorCPUParams &params);
+//
+//  public:
+//    /** Wake up the Fetch unit.  This is needed on thread activation esp.
+//     *  after quiesce wakeup */
+//    void wakeupFetch(ThreadID tid);
+//
+//    /** Try to drain the CPU */
+//    bool drain();
+//
+//    void drainResume();
+//
+//    /** Test to see if the CPU is drained */
+//    bool isDrained();
+//
+//    /** A custom evaluate allows report in the right place (between
+//     *  stages and pipeline advance) */
+//    void evaluate() override;
+//
+//    void minorTrace() const;
+//
+//    /** Stats registering */
+//    void regStats();
+//
+//    /** Functions below here are BaseCPU operations passed on to pipeline
+//     *  stages */
+//
+//    /** Return the IcachePort belonging to Fetch1 for the CPU */
+//    MinorCPU::MinorCPUPort &getInstPort();
+//    /** Return the DcachePort belonging to Execute for the CPU */
+//    MinorCPU::MinorCPUPort &getDataPort();
+//
+//    /** To give the activity recorder to the CPU */
+//    MinorActivityRecorder *getActivityRecorder() { return &activityRecorder; }
+//};
+//
+//}
+//
+//#endif /* __CPU_MINOR_PIPELINE_HH__ */

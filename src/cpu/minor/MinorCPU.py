@@ -223,14 +223,32 @@ class MinorCPU(BaseCPU):
 
     decodeInputBufferSize = Param.Unsigned(3,
         "Size of input buffer to Decode in cycles-worth of insts.")
-    decodeToExecuteForwardDelay = Param.Cycles(1,
-        "Forward cycle delay from Decode to Execute (1 means next cycle)")
+    #decodeToExecuteForwardDelay = Param.Cycles(1,
+    #    "Forward cycle delay from Decode to Execute (1 means next cycle)")
     decodeInputWidth = Param.Unsigned(1, # RE: was 2
         "Width (in instructions) of input to Decode (and implicitly"
         " Decode's own width)")
     decodeCycleInput = Param.Bool(False, # RE: was True
         "Allow Decode to pack instructions from more than one input cycle"
         " to fill its output each cycle")
+    
+    decodeToDummyExecuteForwardDelay = Param.Cycles(1, # RE
+        "Forward cycle delay from Decode to dummyExecute (1 means next cycle)")
+
+    # RE: dummyExecute 
+    
+    dummyExecuteInputBufferSize = Param.Unsigned(1,
+        "Size of input buffer to dummyExecute in cycles-worth of insts.")
+    dummyExecuteToExecuteForwardDelay = Param.Cycles(1,
+        "Forward cycle delay from Decode to dummyExecute (1 means next cycle)")
+    dummyExecuteInputWidth = Param.Unsigned(1, # RE: was 2
+        "Width (in instructions) of input to Execute (and implicitly"
+        " dummyExecute's own width)")
+    dummyExecuteCycleInput = Param.Bool(True,
+        "Allow dummyExecute to pack instructions from more than one input cycle"
+        " to fill its output each cycle")
+
+
 
     executeInputWidth = Param.Unsigned(1, # RE: was 2
         "Width (in instructions) of input to Execute")

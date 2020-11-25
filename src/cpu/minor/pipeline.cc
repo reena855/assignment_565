@@ -40,6 +40,7 @@
 #include <algorithm>
 
 #include "cpu/minor/decode.hh"
+#include "cpu/minor/dummy_execute.hh"
 #include "cpu/minor/execute.hh"
 #include "cpu/minor/fetch1.hh"
 #include "cpu/minor/fetch2.hh"
@@ -61,14 +62,18 @@ Pipeline::Pipeline(MinorCPU &cpu_, MinorCPUParams &params) :
         params.fetch1ToFetch2BackwardDelay, true),
     f2ToD(cpu.name() + ".f2ToD", "insts",
         params.fetch2ToDecodeForwardDelay),
-    dToE(cpu.name() + ".dToE", "insts",
-        params.decodeToExecuteForwardDelay),
+    dToDE(cpu.name() + ".dToDE", "insts",
+        params.decodeToDummyExecuteForwardDelay),
+    dEToE(cpu.name() + ".dEToE", "insts",
+        params.dummyExecuteToExecuteForwardDelay),
     eToF1(cpu.name() + ".eToF1", "branch",
         params.executeBranchDelay),
     execute(cpu.name() + ".execute", cpu, params,
-        dToE.output(), eToF1.input()),
+        dEToE.output(), eToF1.input()),
+    dExecute(cpu.name() + ".dummyExecute", cpu, params,
+        dToDE.output(), dEToE.input(), execute.inputBuffer),
     decode(cpu.name() + ".decode", cpu, params,
-        f2ToD.output(), dToE.input(), execute.inputBuffer),
+        f2ToD.output(), dToDE.input(), dExecute.inputBuffer),
     fetch2(cpu.name() + ".fetch2", cpu, params,
         f1ToF2.output(), eToF1.output(), f2ToF1.input(), f2ToD.input(),
         decode.inputBuffer),
@@ -78,8 +83,9 @@ Pipeline::Pipeline(MinorCPU &cpu_, MinorCPUParams &params) :
         /* The max depth of inter-stage FIFOs */
         std::max(params.fetch1ToFetch2ForwardDelay,
         std::max(params.fetch2ToDecodeForwardDelay,
-        std::max(params.decodeToExecuteForwardDelay,
-        params.executeBranchDelay)))),
+	std::max(params.decodeToDummyExecuteForwardDelay,
+        std::max(params.dummyExecuteToExecuteForwardDelay,
+        params.executeBranchDelay))))),
     needToSignalDrained(false)
 {
     if (params.fetch1ToFetch2ForwardDelay < 1) {
@@ -92,9 +98,14 @@ Pipeline::Pipeline(MinorCPU &cpu_, MinorCPUParams &params) :
             cpu.name(), params.fetch2ToDecodeForwardDelay);
     }
 
-    if (params.decodeToExecuteForwardDelay < 1) {
-        fatal("%s: decodeToExecuteForwardDelay must be >= 1 (%d)\n",
-            cpu.name(), params.decodeToExecuteForwardDelay);
+    if (params.decodeToDummyExecuteForwardDelay < 1) {
+        fatal("%s: decodeToDummyExecuteForwardDelay must be >= 1 (%d)\n",
+            cpu.name(), params.decodeToDummyExecuteForwardDelay);
+    }
+
+    if (params.dummyExecuteToExecuteForwardDelay < 1) {
+        fatal("%s: dummyExecuteToExecuteForwardDelay must be >= 1 (%d)\n",
+            cpu.name(), params.dummyExecuteToExecuteForwardDelay);
     }
 
     if (params.executeBranchDelay < 1) {
@@ -109,7 +120,6 @@ Pipeline::regStats()
     Ticked::regStats();
 
     fetch2.regStats();
-    fetch1.regStats(); // RE
 }
 
 void
@@ -121,7 +131,8 @@ Pipeline::minorTrace() const
     fetch2.minorTrace();
     f2ToD.minorTrace();
     decode.minorTrace();
-    dToE.minorTrace();
+    dToDE.minorTrace();
+    dEToE.minorTrace();
     execute.minorTrace();
     eToF1.minorTrace();
     activityRecorder.minorTrace();
@@ -131,9 +142,10 @@ void
 Pipeline::evaluate()
 {
     /* Note that it's important to evaluate the stages in order to allow
-     *  'immediate', 0-time-offset TimeBuffer activity to be visible from
-     *  later stages to earlier ones in the same cycle */
+ *      *  'immediate', 0-time-offset TimeBuffer activity to be visible from
+ *           *  later stages to earlier ones in the same cycle */
     execute.evaluate();
+    dExecute.evaluate();
     decode.evaluate();
     fetch2.evaluate();
     fetch1.evaluate();
@@ -145,11 +157,14 @@ Pipeline::evaluate()
     f1ToF2.evaluate();
     f2ToF1.evaluate();
     f2ToD.evaluate();
-    dToE.evaluate();
+    dToDE.evaluate();
+   
+    dEToE.evaluate();
+   
     eToF1.evaluate();
 
     /* The activity recorder must be be called after all the stages and
-     *  before the idler (which acts on the advice of the activity recorder */
+ *      *  before the idler (which acts on the advice of the activity recorder */
     activityRecorder.evaluate();
 
     if (allow_idling) {
@@ -160,13 +175,14 @@ Pipeline::evaluate()
         }
 
         /* Deactivate all stages.  Note that the stages *could*
-         *  activate and deactivate themselves but that's fraught
-         *  with additional difficulty.
-         *  As organised herre */
+ *          *  activate and deactivate themselves but that's fraught
+ *                   *  with additional difficulty.
+ *                            *  As organised herre */
         activityRecorder.deactivateStage(Pipeline::CPUStageId);
         activityRecorder.deactivateStage(Pipeline::Fetch1StageId);
         activityRecorder.deactivateStage(Pipeline::Fetch2StageId);
         activityRecorder.deactivateStage(Pipeline::DecodeStageId);
+        activityRecorder.deactivateStage(Pipeline::dummyExecuteStageId);
         activityRecorder.deactivateStage(Pipeline::ExecuteStageId);
     }
 
@@ -209,7 +225,7 @@ Pipeline::drain()
     execute.drain();
 
     /* Make sure that needToSignalDrained isn't accidentally set if we
-     *  are 'pre-drained' */
+ *      *  are 'pre-drained' */
     bool drained = isDrained();
     needToSignalDrained = !drained;
 
@@ -234,30 +250,272 @@ Pipeline::isDrained()
     bool fetch1_drained = fetch1.isDrained();
     bool fetch2_drained = fetch2.isDrained();
     bool decode_drained = decode.isDrained();
+    bool dummyExecute_drained = dExecute.isDrained();
     bool execute_drained = execute.isDrained();
 
     bool f1_to_f2_drained = f1ToF2.empty();
     bool f2_to_f1_drained = f2ToF1.empty();
     bool f2_to_d_drained = f2ToD.empty();
-    bool d_to_e_drained = dToE.empty();
+    bool d_to_dE_drained = dToDE.empty();
+    bool dE_to_e_drained = dEToE.empty();
 
     bool ret = fetch1_drained && fetch2_drained &&
-        decode_drained && execute_drained &&
+        decode_drained && dummyExecute_drained && execute_drained &&
         f1_to_f2_drained && f2_to_f1_drained &&
-        f2_to_d_drained && d_to_e_drained;
+        f2_to_d_drained && d_to_dE_drained
+        && dE_to_e_drained;
 
     DPRINTF(MinorCPU, "Pipeline undrained stages state:%s%s%s%s%s%s%s%s\n",
         (fetch1_drained ? "" : " Fetch1"),
         (fetch2_drained ? "" : " Fetch2"),
         (decode_drained ? "" : " Decode"),
+        (dummyExecute_drained?"" : "dummyExecute"),
         (execute_drained ? "" : " Execute"),
         (f1_to_f2_drained ? "" : " F1->F2"),
         (f2_to_f1_drained ? "" : " F2->F1"),
         (f2_to_d_drained ? "" : " F2->D"),
-        (d_to_e_drained ? "" : " D->E")
+        (d_to_dE_drained ? "" : " D->DE"),
+        (dE_to_e_drained ? "" : " DE->E")
         );
 
     return ret;
 }
 
 }
+
+
+
+/*
+
+#include "cpu/minor/pipeline.hh"
+
+#include <algorithm>
+
+#include "cpu/minor/decode.hh"
+#include "cpu/minor/execute1.hh"
+#include "cpu/minor/execute.hh"
+#include "cpu/minor/fetch1.hh"
+#include "cpu/minor/fetch2.hh"
+#include "debug/Drain.hh"
+#include "debug/MinorCPU.hh"
+#include "debug/MinorTrace.hh"
+#include "debug/Quiesce.hh"
+
+namespace Minor
+{
+
+Pipeline::Pipeline(MinorCPU &cpu_, MinorCPUParams &params) :
+    Ticked(cpu_, &(cpu_.BaseCPU::numCycles)),
+    cpu(cpu_),
+    allow_idling(params.enableIdling),
+    f1ToF2(cpu.name() + ".f1ToF2", "lines",
+        params.fetch1ToFetch2ForwardDelay),
+    f2ToF1(cpu.name() + ".f2ToF1", "prediction",
+        params.fetch1ToFetch2BackwardDelay, true),
+    f2ToD(cpu.name() + ".f2ToD", "insts",
+        params.fetch2ToDecodeForwardDelay),
+    dToDE(cpu.name() + ".dToDE", "insts",
+        params.decodeToExecute1ForwardDelay),
+    deToE(cpu.name() + ".deToE", "insts",
+        params.execute1ToExecuteForwardDelay),
+    eToF1(cpu.name() + ".eToF1", "branch",
+        params.executeBranchDelay),
+    execute(cpu.name() + ".execute", cpu, params,
+        deToE.output(), eToF1.input()),
+    execute1(cpu.name() + ".execute1", cpu, params,
+        dToDE.output(), deToE.input(), execute.inputBuffer),
+    decode(cpu.name() + ".decode", cpu, params,
+        f2ToD.output(), dToDE.input(), execute1.inputBuffer),
+    fetch2(cpu.name() + ".fetch2", cpu, params,
+        f1ToF2.output(), eToF1.output(), f2ToF1.input(), f2ToD.input(),
+        decode.inputBuffer),
+    fetch1(cpu.name() + ".fetch1", cpu, params,
+        eToF1.output(), f1ToF2.input(), f2ToF1.output(), fetch2.inputBuffer),
+    activityRecorder(cpu.name() + ".activity", Num_StageId, 
+        std::max(params.fetch1ToFetch2ForwardDelay,
+        std::max(params.fetch2ToDecodeForwardDelay,
+	std::max(params.decodeToExecute1ForwardDelay,
+        std::max(params.execute1ToExecuteForwardDelay,
+        params.executeBranchDelay))))),
+    needToSignalDrained(false)
+
+{
+    if (params.fetch1ToFetch2ForwardDelay < 1) {
+        fatal("%s: fetch1ToFetch2ForwardDelay must be >= 1 (%d)\n",
+            cpu.name(), params.fetch1ToFetch2ForwardDelay);
+    }
+
+    if (params.fetch2ToDecodeForwardDelay < 1) {
+        fatal("%s: fetch2ToDecodeForwardDelay must be >= 1 (%d)\n",
+            cpu.name(), params.fetch2ToDecodeForwardDelay);
+    }
+
+    if (params.decodeToExecute1ForwardDelay < 1) { // RE
+        fatal("%s: decodeToExecute1ForwardDelay must be >= 1 (%d)\n",
+            cpu.name(), params.decodeToExecute1ForwardDelay);
+    }
+
+    if (params.execute1ToExecuteForwardDelay < 1) { // RE
+        fatal("%s: execute1ToExecuteForwardDelay must be >= 1 (%d)\n",
+            cpu.name(), params.execute1ToExecuteForwardDelay);
+    }
+    
+    if (params.executeBranchDelay < 1) {
+        fatal("%s: executeBranchDelay must be >= 1\n",
+            cpu.name(), params.executeBranchDelay);
+    }
+}
+
+void
+Pipeline::regStats()
+{
+    Ticked::regStats();
+
+    fetch2.regStats();
+    fetch1.regStats(); // RE
+}
+
+void
+Pipeline::minorTrace() const
+{
+    fetch1.minorTrace();
+    f1ToF2.minorTrace();
+    f2ToF1.minorTrace();
+    fetch2.minorTrace();
+    f2ToD.minorTrace();
+    decode.minorTrace();
+    dToDE.minorTrace(); // RE
+    deToE.minorTrace(); // RE
+    execute.minorTrace();
+    eToF1.minorTrace();
+    activityRecorder.minorTrace();
+}
+
+void
+Pipeline::evaluate()
+{
+    execute.evaluate();
+    execute1.evaluate(); // RE
+    decode.evaluate();
+    fetch2.evaluate();
+    fetch1.evaluate();
+
+    if (DTRACE(MinorTrace))
+        minorTrace();
+
+    f1ToF2.evaluate();
+    f2ToF1.evaluate();
+    f2ToD.evaluate();
+    dToDE.evaluate(); // RE
+    deToE.evaluate(); // RE
+    eToF1.evaluate();
+
+    activityRecorder.evaluate();
+
+    if (allow_idling) {
+        if (!activityRecorder.active() && !needToSignalDrained) {
+            DPRINTF(Quiesce, "Suspending as the processor is idle\n");
+            stop();
+        }
+
+        activityRecorder.deactivateStage(Pipeline::CPUStageId);
+        activityRecorder.deactivateStage(Pipeline::Fetch1StageId);
+        activityRecorder.deactivateStage(Pipeline::Fetch2StageId);
+        activityRecorder.deactivateStage(Pipeline::DecodeStageId);
+        activityRecorder.deactivateStage(Pipeline::Execute1StageId);
+        activityRecorder.deactivateStage(Pipeline::ExecuteStageId);
+    }
+
+    if (needToSignalDrained) 
+    {
+        DPRINTF(Drain, "Still draining\n");
+        if (isDrained()) {
+            DPRINTF(Drain, "Signalling end of draining\n");
+            cpu.signalDrainDone();
+            needToSignalDrained = false;
+            stop();
+        }
+    }
+}
+
+MinorCPU::MinorCPUPort &
+Pipeline::getInstPort()
+{
+    return fetch1.getIcachePort();
+}
+
+MinorCPU::MinorCPUPort &
+Pipeline::getDataPort()
+{
+    return execute.getDcachePort();
+}
+
+void
+Pipeline::wakeupFetch(ThreadID tid)
+{
+    fetch1.wakeupFetch(tid);
+}
+
+bool
+Pipeline::drain()
+{
+    DPRINTF(MinorCPU, "Draining pipeline by halting inst fetches. "
+        " Execution should drain naturally\n");
+
+    execute.drain();
+
+    bool drained = isDrained();
+    needToSignalDrained = !drained;
+
+    return drained;
+}
+
+void
+Pipeline::drainResume()
+{
+    DPRINTF(Drain, "Drain resume\n");
+
+    for (ThreadID tid = 0; tid < cpu.numThreads; tid++) {
+        fetch1.wakeupFetch(tid);
+    }
+
+    execute.drainResume();
+}
+
+bool
+Pipeline::isDrained()
+{
+    bool fetch1_drained = fetch1.isDrained();
+    bool fetch2_drained = fetch2.isDrained();
+    bool decode_drained = decode.isDrained();
+    bool execute1_drained = execute1.isDrained(); // RE
+    bool execute_drained = execute.isDrained();
+
+    bool f1_to_f2_drained = f1ToF2.empty();
+    bool f2_to_f1_drained = f2ToF1.empty();
+    bool f2_to_d_drained = f2ToD.empty();
+    bool d_to_de_drained = dToDE.empty(); // RE
+    bool de_to_e_drained = deToE.empty(); // RE
+
+    bool ret = fetch1_drained && fetch2_drained && // consider execute0 drained ??
+        decode_drained && execute_drained &&
+        f1_to_f2_drained && f2_to_f1_drained &&
+        f2_to_d_drained && d_to_de_drained && de_to_e_drained; // RE
+
+    DPRINTF(MinorCPU, "Pipeline undrained stages state:%s%s%s%s%s%s%s%s\n",
+        (fetch1_drained ? "" : " Fetch1"),
+        (fetch2_drained ? "" : " Fetch2"),
+        (decode_drained ? "" : " Decode"),
+        (execute1_drained ? "" : " Execute1"),
+        (execute_drained ? "" : " Execute"),
+        (f1_to_f2_drained ? "" : " F1->F2"),
+        (f2_to_f1_drained ? "" : " F2->F1"),
+        (f2_to_d_drained ? "" : " F2->D"),
+        (d_to_de_drained ? "" : " D->DE"),
+        (de_to_e_drained ? "" : " DE->E")
+        );
+
+    return ret;
+}
+
+}*/
