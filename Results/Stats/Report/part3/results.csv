@@ -1,0 +1,21 @@
+
+
+bzip2
+
+option, cpi
+default, 3.763297
+disable_bp, 3.879460
+
+
+libquantum
+
+option, cpi
+default, 3.096918
+disable_bp, 4.405622
+
+
+sjeng
+
+option, cpi
+default, 7.616714
+disable_bp, 7.654191

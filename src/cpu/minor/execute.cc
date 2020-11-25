@@ -1726,16 +1726,16 @@ Execute::getCommittingThread()
 
     for (auto tid : priority_list) {
         ExecuteThreadInfo &ex_info = executeInfo[tid];
-        bool can_commit_insts = !ex_info.inFlightInsts->empty();
+        bool can_commit_insts = !ex_info.inFlightInsts->empty(); // RE:check if there are no inst in flight
         if (can_commit_insts) {
-            QueuedInst *head_inflight_inst = &(ex_info.inFlightInsts->front());
-            MinorDynInstPtr inst = head_inflight_inst->inst;
+            QueuedInst *head_inflight_inst = &(ex_info.inFlightInsts->front()); // RE:execute in order
+            MinorDynInstPtr inst = head_inflight_inst->inst; 
 
             can_commit_insts = can_commit_insts &&
-                (!inst->inLSQ || (lsq.findResponse(inst) != NULL));
+                (!inst->inLSQ || (lsq.findResponse(inst) != NULL)); // RE:check if inst waiting for L/S op
 
             if (!inst->inLSQ) {
-                bool can_transfer_mem_inst = false;
+                bool can_transfer_mem_inst = false; 
                 if (!ex_info.inFUMemInsts->empty() && lsq.canRequest()) {
                     const MinorDynInstPtr head_mem_ref_inst =
                         ex_info.inFUMemInsts->front().inst;
